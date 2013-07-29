@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">AudioSeparate</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="button_record">Record!</string>
+    <string name="button_stop">&quot;Stop Recording&quot;</string>
+    <string name="title_activity_record">Record</string>
+    <string name="button_start">Start</string>
+
+</resources>
