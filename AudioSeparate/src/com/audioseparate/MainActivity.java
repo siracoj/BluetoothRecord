@@ -31,6 +31,8 @@ public class MainActivity extends Activity {
     private BluetoothHeadset mBluetoothHeadset;
     private boolean scoON = false;
     private int selected = 0;
+    private String[] choices = null;
+    private String[] addresses = null;
     /* Broadcast receiver for the SCO State broadcast intent.*/
     private final BroadcastReceiver mSCOHeadsetAudioState = new BroadcastReceiver() {
 
@@ -123,20 +125,20 @@ public class MainActivity extends Activity {
 		}
     }
     
-    public void SCOSetup(View view){
 
-        // start now  
-        mBluetoothAdapter.getProfileProxy(mContext, mProfileListener, BluetoothProfile.HEADSET);
-                
-    }
-    public void displayChoices(){
-        Set<BluetoothDevice> devices = mBluetoothAdapter.getBondedDevices();
+    public void SCOSetup(View view){
+    	Set<BluetoothDevice> devices = mBluetoothAdapter.getBondedDevices();
         Iterator<BluetoothDevice> iter = devices.iterator();
-        String[] choices = new String[devices.size()];
+        choices = new String[devices.size()];
+        addresses = new String[devices.size()];
         for(int i = 0; i<devices.size(); i++){
-        	choices[i] = iter.next().getName();
+        	BluetoothDevice temp = iter.next();
+        	choices[i] = temp.getName();
+        	addresses[i] = temp.getAddress();
         }
-        ArrayAdapter adapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, choices);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, choices);
+        
+        
         
         // 1. Instantiate an AlertDialog.Builder with its constructor
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -152,6 +154,8 @@ public class MainActivity extends Activity {
 			   .setCancelable(false)
 			   .setPositiveButton("OK", new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog,int id) {
+						
+						PCConnect(addresses[selected]);
 						dialog.dismiss();
 					}
 				  })
@@ -160,6 +164,9 @@ public class MainActivity extends Activity {
             	   		@Override
             	   		public void onClick(DialogInterface dialog, int which) {
             	   			selected = which;
+            	   			String msg = "You Selected: " + choices[selected];
+            				Toast.makeText(mContext, msg, Toast.LENGTH_SHORT).show();
+            	   			
             	   		}
                       
                });
@@ -173,10 +180,20 @@ public class MainActivity extends Activity {
         
         dialog.show();
     }
-    public void findPC(){
+    public void PCConnect(String PCAddr){
     	IntentFilter newintent = new IntentFilter();
         newintent.addAction("CONNECT_PC");
         mContext.registerReceiver(PCCommand, newintent);
+        
+        mBluetoothAdapter.getProfileProxy(mContext, mProfileListener, BluetoothProfile.HEADSET);
+        
+        
+        BTConnect BTPC = new BTConnect(PCAddr);
+        BTPC.Start();
+       
+       
+        
+        
     	
         
         

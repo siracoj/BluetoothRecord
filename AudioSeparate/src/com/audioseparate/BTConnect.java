@@ -23,13 +23,14 @@ public class BTConnect{
   private static final UUID MY_UUID =
       UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
  
-  public void setBTAddress(String address){
+  public BTConnect(String address){
 	  this.address = address;
   }
  
   public void Start() {
  
     Log.d(TAG,"...Attempting client connect...");
+    btAdapter = BluetoothAdapter.getDefaultAdapter();
  
     // Set up a pointer to the remote node using it's address.
     BluetoothDevice device = btAdapter.getRemoteDevice(address);
