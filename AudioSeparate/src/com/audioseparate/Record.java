@@ -55,8 +55,7 @@ public class Record extends Activity {
 		final RecordThread BT = new RecordThread(false,mBTFileName);
 		//final RecordThread MIC = new RecordThread(false,mMICFileName);
 		
-		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
-				this);
+		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
  
 			// set title
 			alertDialogBuilder.setTitle("Alert");
@@ -69,10 +68,7 @@ public class Record extends Activity {
 					public void onClick(DialogInterface dialog,int id) {
 						// if this button is clicked, stop recording
 							BT.stopRecording();
-			//				MIC.stopRecording();
 							mAudioManager.stopBluetoothSco();
-							String countmsg = "Changed " + count +" times";
-							Toast.makeText(getParent(), countmsg, Toast.LENGTH_LONG).show();
 						// To do: start separation and play back here
 						
 						dialog.dismiss();
@@ -81,17 +77,14 @@ public class Record extends Activity {
 			
 		try{
 			BT.prepareRecording();
-			//MIC.prepareRecording();
 		}catch(Exception e){
 			Toast.makeText(this, "Recording prepare failed", Toast.LENGTH_SHORT).show();
 			BT.stopRecording();
-			//MIC.stopRecording();
 			this.finish();
 		}
 		try{
 			mAudioManager.stopBluetoothSco();
 			BT.start(); //Try to minimize delay here some how...
-			//MIC.start();
 		}catch(Exception e){
 			Toast.makeText(this, "Recording failed", Toast.LENGTH_SHORT).show();
 			Log.e(LOG_TAG, "Record failed");
@@ -137,24 +130,7 @@ final class RecordThread extends Thread implements Runnable{
 	}
 	public void prepareRecording() throws Exception{
         this.mRecorder = new MediaRecorder();
-        if(isBT){
-        	this.mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        }else{
-        	int camID = Camera.CameraInfo.CAMERA_FACING_BACK;
-        	openCam camT = new openCam(camID);
-        	camT.start();
-        	try{
-        		camT.join();
-        	}catch(InterruptedException e){
-        		Log.e(LOG_TAG, "Camera got Interrupted... restarting prepare");
-        		this.prepareRecording();
-        	}
-        	this.access = camT.getCam();
-        	this.access.unlock();
-        	this.mRecorder.setCamera(access);
-        	this.mRecorder.setAudioSource(MediaRecorder.AudioSource.VOICE_COMMUNICATION);
-
-        }
+        this.mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         this.mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
         this.mRecorder.setOutputFile(mFile);
         this.mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
@@ -187,7 +163,8 @@ final class RecordThread extends Thread implements Runnable{
     }
 	
 }
-final class openCam extends Thread implements Runnable{ // thread to get camera
+
+/*final class openCam extends Thread implements Runnable{ // thread to get camera
 	
 	Camera cam = null;
 	int camId;
@@ -216,4 +193,4 @@ final class openCam extends Thread implements Runnable{ // thread to get camera
 		}
 	}
 	
-}
+}*/

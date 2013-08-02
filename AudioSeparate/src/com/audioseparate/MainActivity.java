@@ -1,20 +1,26 @@
 package com.audioseparate;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
@@ -24,8 +30,9 @@ public class MainActivity extends Activity {
     private Context mContext = null;
     private BluetoothHeadset mBluetoothHeadset;
     private boolean scoON = false;
+    private int selected = 0;
     /* Broadcast receiver for the SCO State broadcast intent.*/
-        private final BroadcastReceiver mSCOHeadsetAudioState = new BroadcastReceiver() {
+    private final BroadcastReceiver mSCOHeadsetAudioState = new BroadcastReceiver() {
 
         public void onReceive(Context context, Intent intent) {
         //if(DEBUG)
@@ -46,32 +53,44 @@ public class MainActivity extends Activity {
         		scoON = false;
         		
         }
-       }
-  };
+      }
+    };
+    //PC Connect Connection Receiver
+    private final BroadcastReceiver PCCommand = new BroadcastReceiver() {
+
+        public void onReceive(Context context, Intent intent) {
+
+        	if(!scoON){
+        		
+        	}
+        }
+    };
+    
+  
   // Define Service Listener of BluetoothProfile
-  		private BluetoothProfile.ServiceListener mProfileListener = new BluetoothProfile.ServiceListener() {
-  			public void onServiceConnected(int profile, BluetoothProfile proxy) {
-  				if (profile == BluetoothProfile.HEADSET) {
-  					mBluetoothHeadset = (BluetoothHeadset) proxy;
-  					List<BluetoothDevice> pairedDevices = mBluetoothHeadset.getConnectedDevices();
-  			        // If there are paired devices
-  			        if (pairedDevices.size() > 0) {
-  			        	startSCO();
-  			           for (BluetoothDevice device : pairedDevices) {
-  			             Log.e(TAG, "BT Device :"+device.getName()+ " , BD_ADDR:" + device.getAddress());       //Print out Headset name      
-  			           }
-  			         } else {
-  			        	Toast.makeText(mContext, "Could not find a connected Headset, please connect a headset", Toast.LENGTH_LONG).show();
-  			        	return;
-  			        }
-  				}
-  			}	
-  			public void onServiceDisconnected(int profile) {
-  				if (profile == BluetoothProfile.HEADSET) {
-  					mBluetoothHeadset = null;
-  				}
+  private BluetoothProfile.ServiceListener mProfileListener = new BluetoothProfile.ServiceListener() {
+  		public void onServiceConnected(int profile, BluetoothProfile proxy) {
+  			if (profile == BluetoothProfile.HEADSET) {
+  				mBluetoothHeadset = (BluetoothHeadset) proxy;
+  				List<BluetoothDevice> pairedDevices = mBluetoothHeadset.getConnectedDevices();
+  			    // If there are paired devices
+  			    if (pairedDevices.size() > 0) {
+  			    	startSCO();
+  			    	for (BluetoothDevice device : pairedDevices) {
+  			    		Log.e(TAG, "BT Device :"+device.getName()+ " , BD_ADDR:" + device.getAddress());       //Print out Headset name      
+  			    	}
+  			    } else {
+  			    	Toast.makeText(mContext, "Could not find a connected Headset, please connect a headset", Toast.LENGTH_LONG).show();
+  			        return;
+  			    }
   			}
-  		};
+  		}	
+  		public void onServiceDisconnected(int profile) {
+  			if (profile == BluetoothProfile.HEADSET) {
+  				mBluetoothHeadset = null;
+  			}
+  		}
+ };
 
     // Local Bluetooth adapter
     private BluetoothAdapter mBluetoothAdapter = null;
@@ -110,6 +129,58 @@ public class MainActivity extends Activity {
         mBluetoothAdapter.getProfileProxy(mContext, mProfileListener, BluetoothProfile.HEADSET);
                 
     }
+    public void displayChoices(){
+        Set<BluetoothDevice> devices = mBluetoothAdapter.getBondedDevices();
+        Iterator<BluetoothDevice> iter = devices.iterator();
+        String[] choices = new String[devices.size()];
+        for(int i = 0; i<devices.size(); i++){
+        	choices[i] = iter.next().getName();
+        }
+        ArrayAdapter adapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, choices);
+        
+        // 1. Instantiate an AlertDialog.Builder with its constructor
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        // 2. Chain together various setter methods to set the dialog characteristics
+        
+        builder.setTitle("Bluetooth PC")
+        	   .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog,int id) {
+						dialog.dismiss();
+					}
+				  })
+			   .setCancelable(false)
+			   .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog,int id) {
+						dialog.dismiss();
+					}
+				  })
+               .setSingleChoiceItems(adapter, -1,
+                      new OnClickListener() {
+            	   		@Override
+            	   		public void onClick(DialogInterface dialog, int which) {
+            	   			selected = which;
+            	   		}
+                      
+               });
+               
+
+					
+
+
+        // 3. Get the AlertDialog from create()
+        AlertDialog dialog = builder.create();
+        
+        dialog.show();
+    }
+    public void findPC(){
+    	IntentFilter newintent = new IntentFilter();
+        newintent.addAction("CONNECT_PC");
+        mContext.registerReceiver(PCCommand, newintent);
+    	
+        
+        
+    }
     public void startSCO(){
         IntentFilter newintent = new IntentFilter();
         newintent.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
@@ -119,7 +190,7 @@ public class MainActivity extends Activity {
         
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         if (mAudioManager == null){
-                Log.e(TAG, "mAudiomanager is null");
+                Log.e(TAG, "Audiomanager is null");
                 finish();
                 return;
         }
